@@ -1,15 +1,46 @@
 {
   "rewrites": [
-    { "source": "/app", "destination": "/app/index.html" },
-    { "source": "/app/(.*)", "destination": "/app/index.html" }
+    {
+      "source": "/app",
+      "destination": "/app/index.html"
+    },
+    {
+      "source": "/app/(.*)",
+      "destination": "/app/index.html"
+    },
+    {
+      "source": "/api/rooms/:id/join",
+      "destination": "/api/rooms/join"
+    },
+    {
+      "source": "/api/rooms/:id/messages",
+      "destination": "/api/rooms/messages?id=:id"
+    },
+    {
+      "source": "/api/rooms/:id/send",
+      "destination": "/api/rooms/send"
+    },
+    {
+      "source": "/api/notes/index",
+      "destination": "/api/notes/list"
+    }
   ],
   "headers": [
     {
       "source": "/api/(.*)",
       "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Access-Control-Allow-Methods", "value": "GET,POST,PUT,DELETE,OPTIONS" },
-        { "key": "Access-Control-Allow-Headers", "value": "Content-Type,X-CC-Token,Authorization" }
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET,POST,PUT,DELETE,OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type,X-CC-Token,Authorization"
+        }
       ]
     }
   ]

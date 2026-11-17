@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CodeCollab — Learn Together. Code Together.</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    body { background: #030712; color: #f1f5f9; overflow-x: hidden; }
+
+    .gradient-text {
+      background: linear-gradient(135deg, #a78bfa, #60a5fa, #34d399);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .gradient-border {
+      border: 1px solid transparent;
+      background: linear-gradient(#0f172a, #0f172a) padding-box,
+        linear-gradient(135deg, #a78bfa44, #60a5fa44) border-box;
+    }
+    .glass {
+      background: rgba(15,23,42,0.7);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(148,163,184,0.1);
+    }
+    .glow { box-shadow: 0 0 60px rgba(139,92,246,0.15), 0 0 120px rgba(59,130,246,0.08); }
+    .btn-primary {
+      background: linear-gradient(135deg, #7c3aed, #2563eb);
+      transition: all 0.3s ease;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 40px rgba(124,58,237,0.4); }
+    .feature-card {
+      background: rgba(15,23,42,0.8);
+      border: 1px solid rgba(148,163,184,0.08);
+      transition: all 0.3s ease;
+    }
+    .feature-card:hover {
+      border-color: rgba(139,92,246,0.3);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 60px rgba(139,92,246,0.1);
+    }
+    @keyframes float { 0%,100% { transform: translateY(0px); } 50% { transform: translateY(-20px); } }
+    @keyframes pulse-glow { 0%,100% { opacity: 0.4; } 50% { opacity: 0.8; } }
+    @keyframes slide-up { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+    .float-anim { animation: float 6s ease-in-out infinite; }
+    .slide-up { animation: slide-up 0.8s ease forwards; }
+    .delay-1 { animation-delay: 0.1s; opacity: 0; }
+    .delay-2 { animation-delay: 0.2s; opacity: 0; }
+    .delay-3 { animation-delay: 0.3s; opacity: 0; }
+    .delay-4 { animation-delay: 0.4s; opacity: 0; }
+
+    .orb {
+      position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none;
+      animation: pulse-glow 4s ease-in-out infinite;
+    }
+    .scroll-reveal { opacity: 0; transform: translateY(30px); transition: all 0.6s ease; }
+    .scroll-reveal.visible { opacity: 1; transform: translateY(0); }
+    .typing-cursor::after { content: '|'; animation: blink 1s infinite; }
+    @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0;} }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #030712; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="fixed top-0 w-full z-50 glass border-b border-white/5">
+  <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-blue-500 flex items-center justify-center">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+          <polyline points="16,18 22,12 16,6"/><polyline points="8,6 2,12 8,18"/>
+        </svg>
+      </div>
+      <span class="font-bold text-lg gradient-text">CodeCollab</span>
+    </div>
+    <div class="hidden md:flex items-center gap-8 text-sm text-slate-400">
+      <a href="#features" class="hover:text-white transition-colors">Features</a>
+      <a href="#pricing" class="hover:text-white transition-colors">Pricing</a>
+      <a href="#testimonials" class="hover:text-white transition-colors">Community</a>
+    </div>
+    <div class="flex items-center gap-3">
+      <a href="/app" class="text-sm text-slate-300 hover:text-white transition-colors px-4 py-2">Log in</a>
+      <a href="/app" class="btn-primary text-sm font-semibold px-5 py-2.5 rounded-xl text-white">Get Started</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="relative min-h-screen flex items-center pt-16 overflow-hidden">
+  <div class="orb w-[600px] h-[600px] bg-violet-600/20 top-0 left-1/4" style="animation-delay:0s"></div>
+  <div class="orb w-[400px] h-[400px] bg-blue-600/15 top-1/3 right-1/4" style="animation-delay:2s"></div>
+  <div class="orb w-[300px] h-[300px] bg-emerald-600/10 bottom-1/4 left-1/3" style="animation-delay:1s"></div>
+
+  <div class="relative max-w-7xl mx-auto px-6 py-24 grid lg:grid-cols-2 gap-16 items-center">
+    <div>
+      <div class="slide-up inline-flex items-center gap-2 glass rounded-full px-4 py-2 text-sm text-violet-300 mb-8">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        Now in public beta — join 10,000+ developers
+      </div>
+      <h1 class="slide-up delay-1 text-5xl lg:text-7xl font-black leading-tight mb-6">
+        <span class="gradient-text">Learn Together.</span><br/>
+        <span class="text-white">Code Together.</span><br/>
+        <span class="text-slate-400">Build Together.</span>
+      </h1>
+      <p class="slide-up delay-2 text-xl text-slate-400 leading-relaxed mb-10 max-w-xl">
+        The all-in-one collaborative workspace for developers. Real-time code editing, study rooms, AI assistance, and team communication — all in one place.
+      </p>
+      <div class="slide-up delay-3 flex flex-wrap gap-4">
+        <a href="/app" class="btn-primary px-8 py-4 rounded-2xl text-white font-bold text-lg flex items-center gap-2">
+          Start Coding Free
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        <a href="#features" class="glass px-8 py-4 rounded-2xl text-slate-300 font-semibold text-lg hover:text-white transition-colors">
+          See Features
+        </a>
+      </div>
+      <div class="slide-up delay-4 flex items-center gap-6 mt-10 text-sm text-slate-500">
+        <span class="flex items-center gap-2">
+          <svg width="14" height="14" fill="#34d399" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+          Free forever plan
+        </span>
+        <span class="flex items-center gap-2">
+          <svg width="14" height="14" fill="#34d399" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+          No credit card required
+        </span>
+        <span class="flex items-center gap-2">
+          <svg width="14" height="14" fill="#34d399" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+          14 languages supported
+        </span>
+      </div>
+    </div>
+
+    <!-- Hero mockup -->
+    <div class="float-anim relative hidden lg:block">
+      <div class="glass glow rounded-3xl overflow-hidden border border-violet-500/20" style="background:rgba(10,15,30,0.9)">
+        <!-- Editor header -->
+        <div class="flex items-center gap-2 px-4 py-3 border-b border-white/5">
+          <div class="w-3 h-3 rounded-full bg-red-500/80"></div>
+          <div class="w-3 h-3 rounded-full bg-yellow-500/80"></div>
+          <div class="w-3 h-3 rounded-full bg-green-500/80"></div>
+          <div class="flex-1 flex gap-2 ml-4">
+            <span class="glass rounded px-3 py-1 text-xs text-violet-300 border border-violet-500/20">main.py</span>
+            <span class="text-slate-600 rounded px-3 py-1 text-xs">utils.js</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+            <span class="text-xs text-emerald-400">3 online</span>
+          </div>
+        </div>
+        <!-- Code -->
+        <div class="mono text-sm p-4 space-y-1">
+          <div><span class="text-blue-400">def</span> <span class="text-yellow-300">solve_two_sum</span><span class="text-white">(nums, target):</span></div>
+          <div class="pl-4"><span class="text-slate-500"># Hash map approach — O(n)</span></div>
+          <div class="pl-4"><span class="text-purple-400">seen</span> <span class="text-white">= {}</span></div>
+          <div class="pl-4"><span class="text-blue-400">for</span> <span class="text-white">i, num</span> <span class="text-blue-400">in</span> <span class="text-white">enumerate(nums):</span></div>
+          <div class="pl-8"><span class="text-purple-400">complement</span> <span class="text-white">= target - num</span></div>
+          <div class="pl-8 bg-violet-500/10 rounded -mx-4 px-12"><span class="text-blue-400">if</span> <span class="text-white">complement</span> <span class="text-blue-400">in</span> <span class="text-white">seen:</span></div>
+          <div class="pl-12"><span class="text-blue-400">return</span> <span class="text-white">[seen[complement], i]</span></div>
+          <div class="pl-8"><span class="text-white">seen[num] = i</span></div>
+        </div>
+        <!-- Cursors -->
+        <div class="px-4 py-2 border-t border-white/5 flex gap-3">
+          <div class="flex items-center gap-1.5">
+            <div class="w-5 h-5 rounded-full bg-violet-500 flex items-center justify-center text-xs font-bold">A</div>
+            <span class="text-xs text-slate-400">alex</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <div class="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center text-xs font-bold">S</div>
+            <span class="text-xs text-slate-400">sara</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <div class="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center text-xs font-bold">M</div>
+            <span class="text-xs text-slate-400">mike</span>
+          </div>
+        </div>
+        <!-- Output -->
+        <div class="border-t border-white/5 px-4 py-3">
+          <div class="text-xs text-slate-500 mb-2">OUTPUT</div>
+          <div class="mono text-sm text-emerald-400">✓ Test passed: [0, 1]  (2ms)</div>
+        </div>
+      </div>
+      <!-- Floating chat card -->
+      <div class="absolute -right-8 top-1/4 glass rounded-2xl p-4 w-56 border border-blue-500/20">
+        <div class="text-xs text-slate-500 mb-3">Live Chat</div>
+        <div class="space-y-2.5">
+          <div class="flex items-start gap-2">
+            <div class="w-5 h-5 rounded-full bg-violet-500 text-xs flex items-center justify-center flex-shrink-0">A</div>
+            <div class="text-xs text-slate-300 bg-white/5 rounded-lg p-2">Try using a set for O(n) lookup!</div>
+          </div>
+          <div class="flex items-start gap-2">
+            <div class="w-5 h-5 rounded-full bg-emerald-500 text-xs flex items-center justify-center flex-shrink-0">S</div>
+            <div class="text-xs text-slate-300 bg-white/5 rounded-lg p-2">Oh nice, much faster 🚀</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Stats -->
+<section class="py-16 border-y border-white/5">
+  <div class="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+    <div class="scroll-reveal">
+      <div class="text-4xl font-black gradient-text mb-2">10K+</div>
+      <div class="text-slate-500 text-sm">Active Developers</div>
+    </div>
+    <div class="scroll-reveal">
+      <div class="text-4xl font-black gradient-text mb-2">2.5K+</div>
+      <div class="text-slate-500 text-sm">Study Rooms</div>
+    </div>
+    <div class="scroll-reveal">
+      <div class="text-4xl font-black gradient-text mb-2">14</div>
+      <div class="text-slate-500 text-sm">Languages Supported</div>
+    </div>
+    <div class="scroll-reveal">
+      <div class="text-4xl font-black gradient-text mb-2">99.9%</div>
+      <div class="text-slate-500 text-sm">Uptime</div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section id="features" class="py-32">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="text-center mb-20 scroll-reveal">
+      <div class="inline-flex items-center gap-2 glass rounded-full px-4 py-2 text-sm text-violet-300 mb-6">
+        <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20"><path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1h4v1a2 2 0 11-4 0zM12 14c.015-.34.208-.646.477-.859a4 4 0 10-4.954 0c.27.213.462.519.477.859h4z"/></svg>
+        Everything You Need
+      </div>
+      <h2 class="text-5xl font-black mb-6">Built for <span class="gradient-text">Modern Developers</span></h2>
+      <p class="text-xl text-slate-400 max-w-2xl mx-auto">
+        From solo coding sessions to team projects, CodeCollab has every tool you need to learn faster and build better.
+      </p>
+    </div>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Feature cards -->
+      <div class="feature-card rounded-3xl p-8 scroll-reveal">
+        <div class="w-12 h-12 rounded-2xl bg-violet-500/20 flex items-center justify-center mb-5 text-2xl">⚡</div>
+        <h3 class="text-xl font-bold mb-3">Real-Time Code Editor</h3>
+        <p class="text-slate-400 leading-relaxed">Monaco-powered editor with live collaboration, shared cursors, and instant sync across all participants.</p>
+      </div>
+      <div class="feature-card rounded-3xl p-8 scroll-reveal">
+        <div class="w-12 h-12 rounded-2xl bg-blue-500/20 flex items-center justify-center mb-5 text-2xl">🌐</div>
+        <h3 class="text-xl font-bold mb-3">Multi-Language Compiler</h3>
+        <p class="text-slate-400 leading-relaxed">Run code in 14 languages including Python, JavaScript, Go, Rust, Java, and more. See output instantly.</p>
+      </div>
+      <div class="feature-card rounded-3xl p-8 scroll-reveal">
+        <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center mb-5 text-2xl">📚</div>
+        <h3 class="text-xl font-bold mb-3">Study Rooms</h3>
+        <p class="text-slate-400 leading-relaxed">Create public or private rooms for focused study sessions. Invite teammates, share resources, and track progress.</p>
+      </div>
+      <div class="feature-card rounded-3xl p-8 scroll-reveal">
+        <div class="w-12 h-12 rounded-2xl bg-pink-500/20 flex items-center justify-center mb-5 text-2xl">💬</div>
+        <h3 class="text-xl font-bold mb-3">Live Chat</h3>
+        <p class="text-slate-400 leading-relaxed">Real-time room chat with mentions, replies, emoji reactions, file sharing, and message history.</p>
+      </div>
+      <div class="feature-card rounded-3xl p-8 scroll-reveal">
+        <div class="w-12 h-12 rounded-2xl bg-orange-500/20 flex items-center justify-center mb-5 text-2xl">🤖</div>
+        <h3 class="text-xl font-bold mb-3">AI Assistant</h3>
+        <p class="text-slate-400 leading-relaxed">Built-in AI for code explanation, debugging, optimization, algorithm explanation, and study planning.</p>
+      </div>
+      <div class="feature-card rounded-3xl p-8 scroll-reveal">
+        <div class="w-12 h-12 rounded-2xl bg-cyan-500/20 flex items-center justify-center mb-5 text-2xl">🎥</div>
+        <h3 class="text-xl font-bold mb-3">Video & Voice</h3>
+        <p class="text-slate-400 leading-relaxed">WebRTC-powered video calls, voice channels, and screen sharing built directly into your workspace.</p>
+      </div>
+      <div class="feature-card rounded-3xl p-8 scroll-reveal">
+        <div class="w-12 h-12 rounded-2xl bg-yellow-500/20 flex items-center justify-center mb-5 text-2xl">✏️</div>
+        <h3 class="text-xl font-bold mb-3">Shared Whiteboard</h3>
+        <p class="text-slate-400 leading-relaxed">Collaborative drawing canvas for diagrams, system design, and visual explanations. Export as PNG.</p>
+      </div>
+      <div class="feature-card rounded-3xl p-8 scroll-reveal">
+        <div class="w-12 h-12 rounded-2xl bg-indigo-500/20 flex items-center justify-center mb-5 text-2xl">📝</div>
+        <h3 class="text-xl font-bold mb-3">Notes & Markdown</h3>
+        <p class="text-slate-400 leading-relaxed">Personal and shared notes with rich markdown support, auto-save, and full-text search.</p>
+      </div>
+      <div class="feature-card rounded-3xl p-8 scroll-reveal">
+        <div class="w-12 h-12 rounded-2xl bg-rose-500/20 flex items-center justify-center mb-5 text-2xl">🏆</div>
+        <h3 class="text-xl font-bold mb-3">Study Tracker</h3>
+        <p class="text-slate-400 leading-relaxed">Pomodoro timer, study streaks, leaderboards, achievements, and detailed progress analytics.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Testimonials -->
+<section id="testimonials" class="py-32 bg-slate-950/50">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="text-center mb-20 scroll-reveal">
+      <h2 class="text-5xl font-black mb-4">Loved by <span class="gradient-text">Developers</span></h2>
+      <p class="text-slate-400 text-xl">Join thousands of developers who code and learn together daily.</p>
+    </div>
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="feature-card rounded-3xl p-8 scroll-reveal">
+        <div class="flex items-center gap-1 mb-4 text-yellow-400">★★★★★</div>
+        <p class="text-slate-300 mb-6 leading-relaxed">"CodeCollab completely changed how our study group works. Real-time code editing with live chat is just brilliant. We solve LeetCode problems together every day."</p>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-blue-500 flex items-center justify-center font-bold">A</div>
+          <div>
+            <div class="font-semibold">Alex Chen</div>
+            <div class="text-sm text-slate-500">CS Student, MIT</div>
+          </div>
+        </div>
+      </div>
+      <div class="feature-card rounded-3xl p-8 scroll-reveal">
+        <div class="flex items-center gap-1 mb-4 text-yellow-400">★★★★★</div>
+        <p class="text-slate-300 mb-6 leading-relaxed">"The AI assistant is incredible. It explains complex algorithms in simple terms and even helps me debug in the middle of a session. It's like having a senior dev always available."</p>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center font-bold">S</div>
+          <div>
+            <div class="font-semibold">Sara Patel</div>
+            <div class="text-sm text-slate-500">Software Engineer, Google</div>
+          </div>
+        </div>
+      </div>
+      <div class="feature-card rounded-3xl p-8 scroll-reveal">
+        <div class="flex items-center gap-1 mb-4 text-yellow-400">★★★★★</div>
+        <p class="text-slate-300 mb-6 leading-relaxed">"I run a bootcamp and CodeCollab has become our primary tool. Study rooms, shared whiteboards, and the collaborative editor — my students love it."</p>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-rose-500 flex items-center justify-center font-bold">M</div>
+          <div>
+            <div class="font-semibold">Marcus Johnson</div>
+            <div class="text-sm text-slate-500">Bootcamp Instructor</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Pricing -->
+<section id="pricing" class="py-32">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="text-center mb-20 scroll-reveal">
+      <h2 class="text-5xl font-black mb-4">Simple <span class="gradient-text">Pricing</span></h2>
+      <p class="text-slate-400 text-xl">Start free. Scale as your team grows.</p>
+    </div>
+    <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+      <div class="feature-card rounded-3xl p-8 scroll-reveal">
+        <div class="text-violet-400 font-semibold mb-2">Free</div>
+        <div class="text-4xl font-black mb-1">$0</div>
+        <div class="text-slate-500 mb-8">Forever free</div>
+        <ul class="space-y-3 text-slate-300 text-sm mb-8">
+          <li class="flex items-center gap-2"><span class="text-emerald-400">✓</span> 3 study rooms</li>
+          <li class="flex items-center gap-2"><span class="text-emerald-400">✓</span> Monaco editor</li>
+          <li class="flex items-center gap-2"><span class="text-emerald-400">✓</span> 14 languages</li>
+          <li class="flex items-center gap-2"><span class="text-emerald-400">✓</span> AI assistant (50 msgs/day)</li>
+          <li class="flex items-center gap-2"><span class="text-emerald-400">✓</span> Live chat</li>
+          <li class="flex items-center gap-2"><span class="text-slate-600">✗</span> <span class="text-slate-600">Video calls</span></li>
+        </ul>
+        <a href="/app" class="block text-center glass rounded-xl py-3 font-semibold hover:text-white transition-colors">Get Started</a>
+      </div>
+      <div class="rounded-3xl p-8 scroll-reveal relative" style="background: linear-gradient(135deg, rgba(124,58,237,0.2), rgba(37,99,235,0.2)); border: 1px solid rgba(139,92,246,0.3);">
+        <div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-violet-500 to-blue-500 text-white text-xs font-bold px-4 py-1.5 rounded-full">MOST POPULAR</div>
+        <div class="text-violet-400 font-semibold mb-2">Pro</div>
+        <div class="text-4xl font-black mb-1">$12<span class="text-lg text-slate-400">/mo</span></div>
+        <div class="text-slate-500 mb-8">Per user</div>
+        <ul class="space-y-3 text-slate-300 text-sm mb-8">
+          <li class="flex items-center gap-2"><span class="text-emerald-400">✓</span> Unlimited rooms</li>
+          <li class="flex items-center gap-2"><span class="text-emerald-400">✓</span> Video & voice calls</li>
+          <li class="flex items-center gap-2"><span class="text-emerald-400">✓</span> Shared whiteboard</li>
+          <li class="flex items-center gap-2"><span class="text-emerald-400">✓</span> Unlimited AI assistant</li>
+          <li class="flex items-center gap-2"><span class="text-emerald-400">✓</span> Project management</li>
+          <li class="flex items-center gap-2"><span class="text-emerald-400">✓</span> Priority support</li>
+        </ul>
+        <a href="/app" class="block text-center btn-primary rounded-xl py-3 font-semibold text-white">Start Pro Trial</a>
+      </div>
+      <div class="feature-card rounded-3xl p-8 scroll-reveal">
+        <div class="text-violet-400 font-semibold mb-2">Team</div>
+        <div class="text-4xl font-black mb-1">$39<span class="text-lg text-slate-400">/mo</span></div>
+        <div class="text-slate-500 mb-8">Up to 10 users</div>
+        <ul class="space-y-3 text-slate-300 text-sm mb-8">
+          <li class="flex items-center gap-2"><span class="text-emerald-400">✓</span> Everything in Pro</li>
+          <li class="flex items-center gap-2"><span class="text-emerald-400">✓</span> Admin dashboard</li>
+          <li class="flex items-center gap-2"><span class="text-emerald-400">✓</span> Team analytics</li>
+          <li class="flex items-center gap-2"><span class="text-emerald-400">✓</span> GitHub integration</li>
+          <li class="flex items-center gap-2"><span class="text-emerald-400">✓</span> Custom branding</li>
+          <li class="flex items-center gap-2"><span class="text-emerald-400">✓</span> SLA support</li>
+        </ul>
+        <a href="/app" class="block text-center glass rounded-xl py-3 font-semibold hover:text-white transition-colors">Contact Sales</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="py-32">
+  <div class="max-w-4xl mx-auto px-6 text-center scroll-reveal">
+    <div class="glass glow rounded-3xl p-16" style="border: 1px solid rgba(139,92,246,0.2)">
+      <h2 class="text-5xl font-black mb-6">Ready to <span class="gradient-text">Code Together?</span></h2>
+      <p class="text-xl text-slate-400 mb-10">Join thousands of developers who collaborate, learn, and build together every day.</p>
+      <a href="/app" class="btn-primary inline-flex items-center gap-2 px-10 py-5 rounded-2xl text-white font-bold text-lg">
+        Get Started for Free
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="border-t border-white/5 py-16">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="flex items-center gap-3 mb-10">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-blue-500 flex items-center justify-center">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+          <polyline points="16,18 22,12 16,6"/><polyline points="8,6 2,12 8,18"/>
+        </svg>
+      </div>
+      <span class="font-bold text-lg gradient-text">CodeCollab</span>
+    </div>
+    <div class="text-slate-600 text-sm">© 2026 CodeCollab. Built for developers, by developers.</div>
+  </div>
+</footer>
+
+<script>
+  // Scroll reveal
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.scroll-reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

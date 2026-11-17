@@ -4,7 +4,6 @@
   "description": "Collaborative coding and study platform",
   "scripts": {
     "dev": "vercel dev",
-    "build": "echo 'Static site — no build step needed'",
     "start": "vercel dev"
   },
   "dependencies": {

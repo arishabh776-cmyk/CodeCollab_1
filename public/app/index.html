@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CodeCollab — Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <!-- Monaco Editor via CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
+  <!-- Marked for markdown -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+  <style>
+    * { font-family: 'Inter', sans-serif; box-sizing: border-box; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    body { background: #030712; color: #f1f5f9; height: 100vh; overflow: hidden; }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    .glass { background: rgba(15,23,42,0.8); backdrop-filter: blur(16px); }
+    .gradient-text { background: linear-gradient(135deg,#a78bfa,#60a5fa); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .sidebar-item { transition: all 0.15s; cursor: pointer; }
+    .sidebar-item:hover { background: rgba(139,92,246,0.1); color: #e2e8f0; }
+    .sidebar-item.active { background: rgba(139,92,246,0.2); color: #a78bfa; border-left: 2px solid #7c3aed; }
+    .room-card { background: rgba(15,23,42,0.8); border: 1px solid rgba(148,163,184,0.08); transition: all 0.2s; cursor: pointer; }
+    .room-card:hover { border-color: rgba(139,92,246,0.3); transform: translateY(-2px); }
+    .btn { transition: all 0.15s; cursor: pointer; }
+    .btn-primary { background: linear-gradient(135deg,#7c3aed,#2563eb); }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .panel { border: 1px solid rgba(148,163,184,0.08); }
+    #monaco-container { width: 100%; height: 100%; }
+    .chat-msg { animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    .tab { border-bottom: 2px solid transparent; transition: all 0.15s; }
+    .tab.active { border-color: #7c3aed; color: #a78bfa; }
+    .tag { background: rgba(139,92,246,0.15); color: #a78bfa; border: 1px solid rgba(139,92,246,0.2); }
+    .notification-dot { animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+    .modal-overlay { background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); }
+    .loading-spinner { border: 2px solid #1e293b; border-top-color: #7c3aed; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .ai-bubble { background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.2); }
+    .user-bubble { background: rgba(37,99,235,0.15); border: 1px solid rgba(37,99,235,0.2); }
+    pre { background: rgba(0,0,0,0.3); border-radius: 8px; padding: 12px; overflow-x: auto; margin: 8px 0; }
+    code { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; }
+    .resizer { cursor: col-resize; background: rgba(148,163,184,0.05); transition: background 0.2s; }
+    .resizer:hover { background: rgba(139,92,246,0.2); }
+    .pomodoro-ring { transform-origin: center; transition: stroke-dashoffset 1s linear; }
+    select option { background: #0f172a; }
+  </style>
+</head>
+<body>
+<div id="app" class="flex h-screen">
+
+  <!-- Sidebar -->
+  <div id="sidebar" class="w-64 flex-shrink-0 glass border-r panel flex flex-col" style="border-color:rgba(148,163,184,0.08)">
+    <!-- Logo -->
+    <div class="px-4 py-4 border-b" style="border-color:rgba(148,163,184,0.08)">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-blue-500 flex items-center justify-center flex-shrink-0">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="16,18 22,12 16,6"/><polyline points="8,6 2,12 8,18"/></svg>
+        </div>
+        <span class="font-bold gradient-text">CodeCollab</span>
+      </div>
+    </div>
+
+    <!-- User info -->
+    <div id="user-info" class="px-4 py-4 border-b" style="border-color:rgba(148,163,184,0.08)">
+      <div class="flex items-center gap-3">
+        <div id="user-avatar" class="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500 to-blue-500 flex items-center justify-center text-sm font-bold flex-shrink-0">?</div>
+        <div class="min-w-0">
+          <div id="user-name" class="text-sm font-semibold truncate">Loading...</div>
+          <div class="flex items-center gap-1.5">
+            <div class="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
+            <span class="text-xs text-slate-500">Online</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
+      <div class="sidebar-item active rounded-xl px-3 py-2.5 flex items-center gap-3 text-sm font-medium" onclick="showView('dashboard')" data-view="dashboard">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </div>
+      <div class="sidebar-item rounded-xl px-3 py-2.5 flex items-center gap-3 text-sm font-medium text-slate-400" onclick="showView('rooms')" data-view="rooms">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Study Rooms
+      </div>
+      <div class="sidebar-item rounded-xl px-3 py-2.5 flex items-center gap-3 text-sm font-medium text-slate-400" onclick="showView('notes')" data-view="notes">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Notes
+      </div>
+      <div class="sidebar-item rounded-xl px-3 py-2.5 flex items-center gap-3 text-sm font-medium text-slate-400" onclick="showView('ai')" data-view="ai">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2z"/><path d="M12 16v-4M12 8h.01"/></svg>
+        AI Assistant
+      </div>
+      <div class="sidebar-item rounded-xl px-3 py-2.5 flex items-center gap-3 text-sm font-medium text-slate-400" onclick="showView('study')" data-view="study">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Study Timer
+      </div>
+    </nav>
+
+    <!-- Bottom actions -->
+    <div class="px-2 py-3 border-t space-y-0.5" style="border-color:rgba(148,163,184,0.08)">
+      <a href="/" class="sidebar-item rounded-xl px-3 py-2.5 flex items-center gap-3 text-sm font-medium text-slate-400 no-underline">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Home
+      </a>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div class="flex-1 flex flex-col overflow-hidden">
+    <!-- Top bar -->
+    <div class="glass border-b panel px-6 h-14 flex items-center gap-4 flex-shrink-0" style="border-color:rgba(148,163,184,0.08)">
+      <div class="flex-1 relative max-w-md">
+        <input id="search-input" type="text" placeholder="Search rooms, users..." class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 pl-9 text-sm text-slate-300 placeholder-slate-600 focus:outline-none focus:border-violet-500/50" oninput="handleSearch(this.value)"/>
+        <svg class="absolute left-3 top-2.5 text-slate-600" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <div id="search-results" class="absolute top-full mt-2 w-full glass rounded-xl border panel overflow-hidden hidden z-50"></div>
+      </div>
+      <div id="page-title" class="text-sm font-semibold text-slate-300">Dashboard</div>
+      <div class="ml-auto flex items-center gap-3">
+        <button onclick="showView('rooms')" class="btn btn-primary text-white text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-1.5">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          New Room
+        </button>
+      </div>
+    </div>
+
+    <!-- View container -->
+    <div class="flex-1 overflow-hidden relative">
+
+      <!-- DASHBOARD VIEW -->
+      <div id="view-dashboard" class="h-full overflow-y-auto p-6">
+        <div class="mb-8">
+          <h1 class="text-2xl font-bold mb-1">Welcome back! 👋</h1>
+          <p class="text-slate-500 text-sm">Here's what's happening in your workspace.</p>
+        </div>
+
+        <!-- Quick stats -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div class="glass rounded-2xl p-4 panel">
+            <div class="text-2xl font-black gradient-text mb-1" id="stat-rooms">—</div>
+            <div class="text-xs text-slate-500">Study Rooms</div>
+          </div>
+          <div class="glass rounded-2xl p-4 panel">
+            <div class="text-2xl font-black text-emerald-400 mb-1">🔥 0</div>
+            <div class="text-xs text-slate-500">Day Streak</div>
+          </div>
+          <div class="glass rounded-2xl p-4 panel">
+            <div class="text-2xl font-black text-blue-400 mb-1">0h</div>
+            <div class="text-xs text-slate-500">Study Today</div>
+          </div>
+          <div class="glass rounded-2xl p-4 panel">
+            <div class="text-2xl font-black text-violet-400 mb-1">0</div>
+            <div class="text-xs text-slate-500">Notes</div>
+          </div>
+        </div>
+
+        <!-- Rooms grid -->
+        <div class="mb-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="font-bold text-lg">Public Rooms</h2>
+            <button onclick="showView('rooms')" class="text-xs text-violet-400 hover:text-violet-300">View all →</button>
+          </div>
+          <div id="dashboard-rooms" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="room-card rounded-2xl p-5 animate-pulse">
+              <div class="h-4 bg-white/5 rounded mb-3 w-3/4"></div>
+              <div class="h-3 bg-white/5 rounded w-full mb-2"></div>
+              <div class="h-3 bg-white/5 rounded w-2/3"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick actions -->
+        <div>
+          <h2 class="font-bold text-lg mb-4">Quick Actions</h2>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <button onclick="openCreateRoomModal()" class="glass panel rounded-2xl p-5 text-left hover:border-violet-500/30 transition-colors group">
+              <div class="text-2xl mb-3">🏠</div>
+              <div class="text-sm font-semibold group-hover:text-violet-300 transition-colors">Create Room</div>
+            </button>
+            <button onclick="showView('notes'); setTimeout(()=>createNote(),300)" class="glass panel rounded-2xl p-5 text-left hover:border-blue-500/30 transition-colors group">
+              <div class="text-2xl mb-3">📝</div>
+              <div class="text-sm font-semibold group-hover:text-blue-300 transition-colors">New Note</div>
+            </button>
+            <button onclick="showView('ai')" class="glass panel rounded-2xl p-5 text-left hover:border-emerald-500/30 transition-colors group">
+              <div class="text-2xl mb-3">🤖</div>
+              <div class="text-sm font-semibold group-hover:text-emerald-300 transition-colors">Ask AI</div>
+            </button>
+            <button onclick="showView('study')" class="glass panel rounded-2xl p-5 text-left hover:border-orange-500/30 transition-colors group">
+              <div class="text-2xl mb-3">⏱️</div>
+              <div class="text-sm font-semibold group-hover:text-orange-300 transition-colors">Study Timer</div>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ROOMS VIEW -->
+      <div id="view-rooms" class="h-full overflow-y-auto p-6 hidden">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h1 class="text-2xl font-bold mb-1">Study Rooms</h1>
+            <p class="text-slate-500 text-sm">Join a room or create your own collaborative workspace.</p>
+          </div>
+          <button onclick="openCreateRoomModal()" class="btn btn-primary text-white text-sm font-semibold px-5 py-2.5 rounded-xl flex items-center gap-2">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            Create Room
+          </button>
+        </div>
+
+        <!-- Filter tabs -->
+        <div class="flex gap-1 mb-6 border-b" style="border-color:rgba(148,163,184,0.08)">
+          <button class="tab active px-4 py-2.5 text-sm font-medium" onclick="filterRooms('all', this)">All Rooms</button>
+          <button class="tab px-4 py-2.5 text-sm font-medium text-slate-400" onclick="filterRooms('javascript', this)">JavaScript</button>
+          <button class="tab px-4 py-2.5 text-sm font-medium text-slate-400" onclick="filterRooms('python', this)">Python</button>
+          <button class="tab px-4 py-2.5 text-sm font-medium text-slate-400" onclick="filterRooms('algorithms', this)">Algorithms</button>
+        </div>
+
+        <div id="rooms-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+      </div>
+
+      <!-- ROOM VIEW (code editor + chat) -->
+      <div id="view-room" class="h-full hidden flex" style="display:none">
+        <div class="flex w-full h-full">
+          <!-- Members panel -->
+          <div id="members-panel" class="w-52 flex-shrink-0 glass border-r panel flex flex-col" style="border-color:rgba(148,163,184,0.08)">
+            <div class="px-4 py-3 border-b text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center justify-between" style="border-color:rgba(148,163,184,0.08)">
+              <span>Members</span>
+              <span id="member-count" class="text-violet-400">0</span>
+            </div>
+            <div id="members-list" class="flex-1 overflow-y-auto p-3 space-y-1"></div>
+            <div class="p-3 border-t" style="border-color:rgba(148,163,184,0.08)">
+              <button onclick="leaveRoom()" class="w-full text-xs text-slate-500 hover:text-red-400 py-2 transition-colors">← Leave Room</button>
+            </div>
+          </div>
+
+          <!-- Editor area -->
+          <div class="flex-1 flex flex-col min-w-0">
+            <!-- Editor top bar -->
+            <div class="flex items-center gap-2 px-4 py-2.5 border-b panel flex-shrink-0 glass" style="border-color:rgba(148,163,184,0.08)">
+              <div id="file-tabs" class="flex gap-1 flex-1 overflow-x-auto">
+                <div id="active-tab" class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-violet-300 bg-violet-500/10 border border-violet-500/20 cursor-pointer mono">
+                  main.js
+                </div>
+                <button onclick="newSnippet()" class="px-2 py-1.5 rounded-lg text-xs text-slate-600 hover:text-slate-400 hover:bg-white/5 transition-colors">+</button>
+              </div>
+              <select id="lang-select" class="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-slate-400 focus:outline-none focus:border-violet-500/50" onchange="changeLanguage(this.value)">
+                <option value="javascript">JavaScript</option>
+                <option value="python">Python</option>
+                <option value="typescript">TypeScript</option>
+                <option value="java">Java</option>
+                <option value="cpp">C++</option>
+                <option value="c">C</option>
+                <option value="go">Go</option>
+                <option value="rust">Rust</option>
+                <option value="php">PHP</option>
+                <option value="ruby">Ruby</option>
+                <option value="csharp">C#</option>
+                <option value="kotlin">Kotlin</option>
+                <option value="swift">Swift</option>
+                <option value="sql">SQL</option>
+              </select>
+              <button onclick="runCode()" class="btn btn-primary text-white text-xs font-semibold px-4 py-1.5 rounded-lg flex items-center gap-1.5">
+                <svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20"><path d="M6.3 2.84L18 10 6.3 17.16V2.84z"/></svg>
+                Run
+              </button>
+              <button onclick="saveCode()" class="text-xs text-slate-500 hover:text-slate-300 px-2 py-1.5 transition-colors">Save</button>
+            </div>
+
+            <!-- Monaco editor -->
+            <div class="flex-1 relative min-h-0" id="editor-wrapper">
+              <div id="monaco-container"></div>
+            </div>
+
+            <!-- Output panel -->
+            <div id="output-panel" class="border-t panel" style="border-color:rgba(148,163,184,0.08);height:160px">
+              <div class="flex items-center gap-2 px-4 py-2 border-b" style="border-color:rgba(148,163,184,0.08)">
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Output</span>
+                <div id="run-status" class="ml-auto text-xs text-slate-600"></div>
+                <button onclick="clearOutput()" class="text-xs text-slate-600 hover:text-slate-400">Clear</button>
+              </div>
+              <div id="output-content" class="mono text-xs p-4 h-full overflow-y-auto text-emerald-400">
+                <span class="text-slate-600">// Click Run to execute code</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chat panel -->
+          <div id="chat-panel" class="w-72 flex-shrink-0 glass border-l panel flex flex-col" style="border-color:rgba(148,163,184,0.08)">
+            <div class="px-4 py-3 border-b text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center justify-between" style="border-color:rgba(148,163,184,0.08)">
+              <span>Chat</span>
+              <button onclick="toggleAIPanel()" class="text-violet-400 hover:text-violet-300 transition-colors" title="AI Help">🤖</button>
+            </div>
+
+            <!-- AI mini panel -->
+            <div id="ai-mini" class="hidden border-b p-3 bg-violet-500/5" style="border-color:rgba(148,163,184,0.08)">
+              <div class="text-xs text-violet-400 mb-2 font-medium">Quick AI Actions</div>
+              <div class="flex flex-wrap gap-1.5">
+                <button onclick="aiCodeAction('explain')" class="text-xs bg-violet-500/10 border border-violet-500/20 text-violet-300 px-2.5 py-1 rounded-lg hover:bg-violet-500/20">Explain</button>
+                <button onclick="aiCodeAction('debug')" class="text-xs bg-red-500/10 border border-red-500/20 text-red-300 px-2.5 py-1 rounded-lg hover:bg-red-500/20">Debug</button>
+                <button onclick="aiCodeAction('optimize')" class="text-xs bg-blue-500/10 border border-blue-500/20 text-blue-300 px-2.5 py-1 rounded-lg hover:bg-blue-500/20">Optimize</button>
+              </div>
+            </div>
+
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-3 space-y-3"></div>
+
+            <div class="p-3 border-t" style="border-color:rgba(148,163,184,0.08)">
+              <div class="flex gap-2">
+                <input id="chat-input" type="text" placeholder="Message..." class="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-slate-300 placeholder-slate-600 focus:outline-none focus:border-violet-500/50"
+                  onkeydown="if(event.key==='Enter')sendMessage()"/>
+                <button onclick="sendMessage()" class="btn btn-primary w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <svg width="14" height="14" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- NOTES VIEW -->
+      <div id="view-notes" class="h-full hidden flex">
+        <div class="w-64 flex-shrink-0 glass border-r panel flex flex-col" style="border-color:rgba(148,163,184,0.08)">
+          <div class="px-4 py-3 border-b flex items-center justify-between" style="border-color:rgba(148,163,184,0.08)">
+            <span class="text-sm font-semibold">Notes</span>
+            <button onclick="createNote()" class="btn btn-primary w-7 h-7 rounded-lg flex items-center justify-center text-white">
+              <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            </button>
+          </div>
+          <div id="notes-list" class="flex-1 overflow-y-auto p-2 space-y-1"></div>
+        </div>
+        <div class="flex-1 flex flex-col min-w-0">
+          <div id="note-editor-area" class="flex-1 p-8 overflow-y-auto">
+            <div class="max-w-3xl mx-auto text-center mt-20 text-slate-600">
+              <div class="text-5xl mb-4">📝</div>
+              <div class="text-lg font-semibold mb-2">No note selected</div>
+              <div class="text-sm">Create a new note or select one from the sidebar.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI ASSISTANT VIEW -->
+      <div id="view-ai" class="h-full hidden flex flex-col">
+        <div class="flex items-center gap-4 px-6 py-4 border-b panel" style="border-color:rgba(148,163,184,0.08)">
+          <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-violet-500 to-blue-500 flex items-center justify-center text-lg">🤖</div>
+          <div>
+            <div class="font-bold">CodeCollab AI</div>
+            <div class="text-xs text-slate-500">Your intelligent coding assistant</div>
+          </div>
+          <button onclick="clearAIChat()" class="ml-auto text-xs text-slate-600 hover:text-slate-400 transition-colors">Clear chat</button>
+        </div>
+
+        <div id="ai-messages" class="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+          <div class="flex gap-3">
+            <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-blue-500 flex items-center justify-center text-sm flex-shrink-0">🤖</div>
+            <div class="ai-bubble rounded-2xl rounded-tl-sm p-4 max-w-2xl text-sm text-slate-300 leading-relaxed">
+              Hi! I'm your CodeCollab AI assistant. I can help you with:<br/><br/>
+              • <strong>Explain</strong> code and algorithms<br/>
+              • <strong>Debug</strong> errors and issues<br/>
+              • <strong>Optimize</strong> your code for performance<br/>
+              • <strong>Generate</strong> code snippets<br/>
+              • Answer programming questions<br/><br/>
+              What would you like to work on?
+            </div>
+          </div>
+        </div>
+
+        <div class="px-6 py-4 border-t panel" style="border-color:rgba(148,163,184,0.08)">
+          <!-- Quick prompts -->
+          <div class="flex gap-2 mb-3 overflow-x-auto pb-1">
+            <button onclick="sendAIMessage('Explain Big O notation')" class="text-xs glass border border-white/10 text-slate-400 hover:text-slate-300 px-3 py-1.5 rounded-full whitespace-nowrap transition-colors">Big O notation</button>
+            <button onclick="sendAIMessage('Write a binary search function in Python')" class="text-xs glass border border-white/10 text-slate-400 hover:text-slate-300 px-3 py-1.5 rounded-full whitespace-nowrap transition-colors">Binary search</button>
+            <button onclick="sendAIMessage('What is dynamic programming?')" class="text-xs glass border border-white/10 text-slate-400 hover:text-slate-300 px-3 py-1.5 rounded-full whitespace-nowrap transition-colors">Dynamic programming</button>
+            <button onclick="sendAIMessage('Explain how React hooks work')" class="text-xs glass border border-white/10 text-slate-400 hover:text-slate-300 px-3 py-1.5 rounded-full whitespace-nowrap transition-colors">React hooks</button>
+          </div>
+          <div class="flex gap-3">
+            <textarea id="ai-input" placeholder="Ask anything about code..." class="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm text-slate-300 placeholder-slate-600 focus:outline-none focus:border-violet-500/50 resize-none" rows="2"
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAIMessage()}"></textarea>
+            <button onclick="sendAIMessage()" class="btn btn-primary w-12 h-12 mt-auto rounded-2xl flex items-center justify-center flex-shrink-0">
+              <svg width="16" height="16" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- STUDY TIMER VIEW -->
+      <div id="view-study" class="h-full overflow-y-auto flex items-start justify-center pt-12 p-6">
+        <div class="w-full max-w-md">
+          <h1 class="text-2xl font-bold mb-2 text-center">Study Timer</h1>
+          <p class="text-slate-500 text-sm text-center mb-10">Stay focused with the Pomodoro technique.</p>
+
+          <!-- Timer circle -->
+          <div class="flex justify-center mb-8">
+            <div class="relative w-56 h-56">
+              <svg class="w-full h-full -rotate-90" viewBox="0 0 200 200">
+                <circle cx="100" cy="100" r="90" fill="none" stroke="rgba(148,163,184,0.1)" stroke-width="8"/>
+                <circle id="timer-ring" cx="100" cy="100" r="90" fill="none" stroke="url(#grad)" stroke-width="8" stroke-linecap="round"
+                  stroke-dasharray="565.5" stroke-dashoffset="0" class="pomodoro-ring"/>
+                <defs>
+                  <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" style="stop-color:#7c3aed"/>
+                    <stop offset="100%" style="stop-color:#2563eb"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div class="absolute inset-0 flex flex-col items-center justify-center">
+                <div id="timer-display" class="text-5xl font-black mono">25:00</div>
+                <div id="timer-label" class="text-sm text-slate-500 mt-1">Focus</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mode selector -->
+          <div class="flex gap-2 justify-center mb-8">
+            <button onclick="setTimerMode('focus')" class="timer-mode-btn active px-4 py-2 rounded-xl text-sm font-medium" style="background:rgba(124,58,237,0.2);color:#a78bfa;border:1px solid rgba(124,58,237,0.3)">🎯 Focus 25m</button>
+            <button onclick="setTimerMode('short')" class="timer-mode-btn px-4 py-2 rounded-xl text-sm font-medium glass text-slate-400 border border-white/10">☕ Short 5m</button>
+            <button onclick="setTimerMode('long')" class="timer-mode-btn px-4 py-2 rounded-xl text-sm font-medium glass text-slate-400 border border-white/10">😴 Long 15m</button>
+          </div>
+
+          <!-- Controls -->
+          <div class="flex justify-center gap-4 mb-10">
+            <button onclick="resetTimer()" class="glass border border-white/10 w-12 h-12 rounded-2xl flex items-center justify-center text-slate-400 hover:text-white transition-colors">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+            </button>
+            <button id="timer-btn" onclick="toggleTimer()" class="btn-primary w-16 h-16 rounded-2xl flex items-center justify-center text-white text-xl">
+              ▶
+            </button>
+            <button onclick="skipTimer()" class="glass border border-white/10 w-12 h-12 rounded-2xl flex items-center justify-center text-slate-400 hover:text-white transition-colors">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+            </button>
+          </div>
+
+          <!-- Stats -->
+          <div class="glass rounded-2xl panel p-6">
+            <div class="text-sm font-semibold mb-4 text-slate-400">Today's Stats</div>
+            <div class="grid grid-cols-3 gap-4 text-center">
+              <div>
+                <div id="sessions-count" class="text-2xl font-black gradient-text">0</div>
+                <div class="text-xs text-slate-600 mt-1">Sessions</div>
+              </div>
+              <div>
+                <div id="focus-time" class="text-2xl font-black text-blue-400">0m</div>
+                <div class="text-xs text-slate-600 mt-1">Focus Time</div>
+              </div>
+              <div>
+                <div id="break-time" class="text-2xl font-black text-emerald-400">0m</div>
+                <div class="text-xs text-slate-600 mt-1">Break Time</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end view container -->
+  </div><!-- end main -->
+</div><!-- end app -->
+
+<!-- Create Room Modal -->
+<div id="create-room-modal" class="fixed inset-0 z-50 modal-overlay flex items-center justify-center hidden">
+  <div class="glass rounded-3xl p-8 w-full max-w-md border" style="border-color:rgba(139,92,246,0.2)">
+    <h2 class="text-xl font-bold mb-6">Create a Study Room</h2>
+    <div class="space-y-4">
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-2">Room Name *</label>
+        <input id="room-name" type="text" placeholder="e.g. JavaScript Study Group" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-300 placeholder-slate-600 focus:outline-none focus:border-violet-500/50"/>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-2">Description</label>
+        <textarea id="room-desc" rows="2" placeholder="What will you study?" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-300 placeholder-slate-600 focus:outline-none focus:border-violet-500/50 resize-none"></textarea>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-2">Tags (comma-separated)</label>
+        <input id="room-tags" type="text" placeholder="javascript, react, beginners" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-300 placeholder-slate-600 focus:outline-none focus:border-violet-500/50"/>
+      </div>
+      <div class="flex items-center justify-between">
+        <label class="text-sm text-slate-400">Public room</label>
+        <button id="public-toggle" onclick="togglePublic()" class="w-12 h-6 rounded-full relative transition-colors" style="background:rgba(124,58,237,0.5)">
+          <span class="absolute top-1 right-1 w-4 h-4 rounded-full bg-white transition-transform"></span>
+        </button>
+      </div>
+    </div>
+    <div class="flex gap-3 mt-6">
+      <button onclick="closeCreateRoomModal()" class="flex-1 glass border border-white/10 text-slate-400 py-3 rounded-xl text-sm hover:text-white transition-colors">Cancel</button>
+      <button onclick="createRoom()" class="flex-1 btn-primary text-white py-3 rounded-xl text-sm font-semibold">Create Room</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = window.__HATCHABLE__ ? window.__HATCHABLE__.api : '/api';
+let currentView = 'dashboard';
+let currentRoom = null;
+let currentSnippetId = null;
+let monacoEditor = null;
+let monacoReady = false;
+let allRooms = [];
+let aiMessages = [];
+let notes = [];
+let currentNote = null;
+let isPublicRoom = true;
+let chatPollInterval = null;
+let lastMsgId = 0;
+
+// Timer state
+let timerInterval = null;
+let timerRunning = false;
+let timerSeconds = 25 * 60;
+let timerMode = 'focus';
+let sessionsCompleted = 0;
+let totalFocusMinutes = 0;
+let totalBreakMinutes = 0;
+
+const TIMER_MODES = { focus: 25*60, short: 5*60, long: 15*60 };
+
+// ─── Init ────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  initMonaco();
+  loadUserInfo();
+  loadRooms();
+  // Load notes if on notes view
+});
+
+async function loadUserInfo() {
+  try {
+    const r = await fetch(`${API}/profile/me`);
+    if (r.ok) {
+      const { user } = await r.json();
+      if (user) {
+        document.getElementById('user-name').textContent = user.display_name || user.handle;
+        const av = document.getElementById('user-avatar');
+        if (user.avatar_url) {
+          av.innerHTML = `<img src="${user.avatar_url}" class="w-full h-full rounded-full object-cover"/>`;
+        } else {
+          av.textContent = (user.display_name || user.handle || '?')[0].toUpperCase();
+        }
+      }
+    }
+  } catch(e) {}
+}
+
+async function loadRooms() {
+  try {
+    const r = await fetch(`${API}/rooms/list`);
+    const { rooms } = await r.json();
+    allRooms = rooms || [];
+    document.getElementById('stat-rooms').textContent = allRooms.length;
+    renderDashboardRooms(allRooms.slice(0, 6));
+    renderRoomsGrid(allRooms);
+  } catch(e) {
+    document.getElementById('dashboard-rooms').innerHTML = '<p class="text-slate-600 text-sm col-span-3">Could not load rooms.</p>';
+  }
+}
+
+function renderDashboardRooms(rooms) {
+  const el = document.getElementById('dashboard-rooms');
+  el.innerHTML = rooms.map(r => roomCard(r)).join('');
+}
+
+function renderRoomsGrid(rooms) {
+  const el = document.getElementById('rooms-grid');
+  el.innerHTML = rooms.length ? rooms.map(r => roomCard(r)).join('') :
+    '<p class="text-slate-600 text-sm col-span-3">No rooms found.</p>';
+}
+
+function roomCard(r) {
+  const tags = (r.tags||[]).slice(0,3).map(t => `<span class="tag text-xs px-2 py-0.5 rounded-full">${t}</span>`).join('');
+  return `<div class="room-card rounded-2xl p-5" onclick="joinRoom(${r.id}, '${escHtml(r.name)}')">
+    <div class="flex items-start justify-between mb-3">
+      <h3 class="font-semibold text-sm leading-tight">${escHtml(r.name)}</h3>
+      <div class="flex items-center gap-1 text-xs text-slate-500 flex-shrink-0 ml-2">
+        <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        ${r.member_count||0}
+      </div>
+    </div>
+    <p class="text-xs text-slate-500 mb-3 line-clamp-2">${escHtml(r.description||'')}</p>
+    <div class="flex flex-wrap gap-1.5">${tags}</div>
+  </div>`;
+}
+
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ─── Navigation ──────────────────────────────────────────────────────
+function showView(name) {
+  document.querySelectorAll('[id^="view-"]').forEach(v => {
+    v.classList.add('hidden');
+    v.style.display = '';
+  });
+  const el = document.getElementById('view-'+name);
+  if (el) {
+    el.classList.remove('hidden');
+    if (name === 'room') el.style.display = 'flex';
+  }
+  document.querySelectorAll('.sidebar-item[data-view]').forEach(i => {
+    i.classList.toggle('active', i.dataset.view === name);
+    i.classList.toggle('text-slate-400', i.dataset.view !== name);
+  });
+  const titles = { dashboard:'Dashboard', rooms:'Study Rooms', room:'Room', notes:'Notes', ai:'AI Assistant', study:'Study Timer' };
+  document.getElementById('page-title').textContent = titles[name] || name;
+  currentView = name;
+  if (name === 'notes') loadNotes();
+  if (name === 'room' && monacoReady) setTimeout(() => monacoEditor && monacoEditor.layout(), 100);
+}
+
+function filterRooms(tag, btn) {
+  document.querySelectorAll('.tab').forEach(t => { t.classList.remove('active'); t.classList.add('text-slate-400'); });
+  btn.classList.add('active'); btn.classList.remove('text-slate-400');
+  const filtered = tag === 'all' ? allRooms : allRooms.filter(r => r.tags && r.tags.includes(tag));
+  renderRoomsGrid(filtered);
+}
+
+// ─── Room ────────────────────────────────────────────────────────────
+async function joinRoom(id, name) {
+  currentRoom = { id, name };
+  document.getElementById('active-tab').textContent = name;
+  document.getElementById('page-title').textContent = name;
+
+  // Join the room
+  try { await fetch(`${API}/rooms/${id}/join`, { method:'POST' }); } catch(e){}
+
+  // Load room details
+  try {
+    const r = await fetch(`${API}/rooms/${id}`);
+    const data = await r.json();
+    if (data.members) renderMembers(data.members);
+    if (data.snippets && data.snippets.length) {
+      currentSnippetId = data.snippets[0].id;
+      loadSnippet(currentSnippetId);
+    } else {
+      // Create a new snippet for this room
+      await newSnippet();
+    }
+  } catch(e) {}
+
+  showView('room');
+  loadChatMessages();
+
+  // Poll for new messages
+  if (chatPollInterval) clearInterval(chatPollInterval);
+  chatPollInterval = setInterval(loadChatMessages, 4000);
+}
+
+function leaveRoom() {
+  if (chatPollInterval) clearInterval(chatPollInterval);
+  chatPollInterval = null;
+  currentRoom = null;
+  showView('dashboard');
+}
+
+function renderMembers(members) {
+  document.getElementById('member-count').textContent = members.length;
+  document.getElementById('members-list').innerHTML = members.map(m => `
+    <div class="flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-white/5 transition-colors">
+      <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 bg-gradient-to-br from-violet-500 to-blue-500">${(m.display_name||m.handle||'?')[0].toUpperCase()}</div>
+      <div class="min-w-0">
+        <div class="text-xs font-medium truncate">${escHtml(m.display_name||m.handle)}</div>
+        <div class="text-xs text-slate-600">${m.role}</div>
+      </div>
+      <div class="w-1.5 h-1.5 rounded-full bg-emerald-400 ml-auto flex-shrink-0"></div>
+    </div>`).join('');
+}
+
+async function loadChatMessages() {
+  if (!currentRoom) return;
+  try {
+    const r = await fetch(`${API}/rooms/${currentRoom.id}/messages`);
+    const { messages } = await r.json();
+    const container = document.getElementById('chat-messages');
+    const wasAtBottom = container.scrollHeight - container.clientHeight <= container.scrollTop + 50;
+    container.innerHTML = messages.map(m => `
+      <div class="chat-msg flex items-start gap-2">
+        <div class="w-6 h-6 rounded-full bg-gradient-to-br from-violet-500 to-blue-500 flex items-center justify-center text-xs font-bold flex-shrink-0">${(m.display_name||m.handle||'?')[0].toUpperCase()}</div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-baseline gap-2">
+            <span class="text-xs font-semibold text-slate-300">${escHtml(m.display_name||m.handle||'User')}</span>
+            <span class="text-xs text-slate-600">${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span>
+          </div>
+          <div class="text-xs text-slate-400 mt-0.5 break-words">${escHtml(m.content)}</div>
+        </div>
+      </div>`).join('');
+    if (wasAtBottom || messages.length === 0) container.scrollTop = container.scrollHeight;
+  } catch(e) {}
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const content = input.value.trim();
+  if (!content || !currentRoom) return;
+  input.value = '';
+  try {
+    await fetch(`${API}/rooms/${currentRoom.id}/send`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ content })
+    });
+    await loadChatMessages();
+  } catch(e) {}
+}
+
+// ─── Monaco Editor ───────────────────────────────────────────────────
+function initMonaco() {
+  require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' } });
+  require(['vs/editor/editor.main'], function() {
+    monacoEditor = monaco.editor.create(document.getElementById('monaco-container'), {
+      value: '// Welcome to CodeCollab!\n// Start coding or join a room.\n\nfunction greet(name) {\n  return `Hello, ${name}! 🚀`;\n}\n\nconsole.log(greet("World"));\n',
+      language: 'javascript',
+      theme: 'vs-dark',
+      fontSize: 14,
+      fontFamily: "'JetBrains Mono', monospace",
+      minimap: { enabled: false },
+      scrollBeyondLastLine: false,
+      lineNumbers: 'on',
+      renderLineHighlight: 'line',
+      cursorBlinking: 'smooth',
+      automaticLayout: true,
+      padding: { top: 12 },
+      wordWrap: 'on',
+    });
+    monaco.editor.defineTheme('codecollab', {
+      base: 'vs-dark', inherit: true,
+      rules: [],
+      colors: {
+        'editor.background': '#030712',
+        'editor.lineHighlightBackground': '#0f172a',
+        'editorLineNumber.foreground': '#334155',
+        'editorLineNumber.activeForeground': '#7c3aed',
+      }
+    });
+    monaco.editor.setTheme('codecollab');
+    monacoReady = true;
+  });
+}
+
+function changeLanguage(lang) {
+  if (!monacoEditor || !monacoReady) return;
+  const model = monacoEditor.getModel();
+  if (model) monaco.editor.setModelLanguage(model, lang);
+}
+
+async function loadSnippet(id) {
+  try {
+    const r = await fetch(`${API}/snippets/${id}`);
+    const { snippet } = await r.json();
+    if (monacoEditor && snippet) {
+      monacoEditor.setValue(snippet.content || '');
+      document.getElementById('lang-select').value = snippet.language || 'javascript';
+      changeLanguage(snippet.language || 'javascript');
+      document.getElementById('active-tab').textContent = snippet.title || 'main.js';
+    }
+  } catch(e) {}
+}
+
+async function saveCode() {
+  if (!monacoEditor || !currentRoom) return;
+  const content = monacoEditor.getValue();
+  const lang = document.getElementById('lang-select').value;
+  try {
+    if (currentSnippetId) {
+      await fetch(`${API}/snippets/save`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ id: currentSnippetId, content, language: lang })
+      });
+    }
+  } catch(e) {}
+}
+
+async function newSnippet() {
+  if (!currentRoom) return;
+  try {
+    const r = await fetch(`${API}/snippets/save`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ id: 'new', room_id: currentRoom.id, title: 'Untitled', content: '', language: 'javascript' })
+    });
+    const { snippet } = await r.json();
+    currentSnippetId = snippet.id;
+    if (monacoEditor) monacoEditor.setValue('');
+  } catch(e) {}
+}
+
+async function runCode() {
+  if (!monacoEditor) return;
+  const code = monacoEditor.getValue();
+  const lang = document.getElementById('lang-select').value;
+  const outputEl = document.getElementById('output-content');
+  const statusEl = document.getElementById('run-status');
+
+  outputEl.innerHTML = '<span class="text-slate-500">Running...</span>';
+  statusEl.innerHTML = '<span class="text-yellow-400">⏳ Running</span>';
+
+  try {
+    const r = await fetch(`${API}/ai/chat`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        messages: [{
+          role: 'user',
+          content: `Execute this ${lang} code mentally and show ONLY the expected output (or error messages). No explanation, just the output.\n\`\`\`${lang}\n${code}\n\`\`\``
+        }]
+      })
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      const msg = data.reply || data.error || 'AI not available';
+      outputEl.innerHTML = `<span class="text-yellow-400">${escHtml(msg)}</span>`;
+      statusEl.innerHTML = '<span class="text-yellow-400">⚠ AI needed</span>';
+      return;
+    }
+    outputEl.innerHTML = `<span class="text-emerald-400">${escHtml(data.reply || '')}</span>`;
+    statusEl.innerHTML = '<span class="text-emerald-400">✓ Done</span>';
+  } catch(e) {
+    outputEl.innerHTML = '<span class="text-red-400">Network error — please try again.</span>';
+    statusEl.innerHTML = '<span class="text-red-400">✗ Error</span>';
+  }
+}
+
+function clearOutput() {
+  document.getElementById('output-content').innerHTML = '<span class="text-slate-600">// Output cleared</span>';
+  document.getElementById('run-status').textContent = '';
+}
+
+// ─── AI Panel in room ────────────────────────────────────────────────
+function toggleAIPanel() {
+  document.getElementById('ai-mini').classList.toggle('hidden');
+}
+
+async function aiCodeAction(action) {
+  if (!monacoEditor) return;
+  const code = monacoEditor.getValue();
+  const lang = document.getElementById('lang-select').value;
+  showView('ai');
+  await sendAIMessage(null, { action, code, language: lang });
+}
+
+// ─── AI Chat ─────────────────────────────────────────────────────────
+async function sendAIMessage(text, codeContext) {
+  const input = document.getElementById('ai-input');
+  const msg = text || input.value.trim();
+  if (!msg && !codeContext) return;
+  if (input && !text) input.value = '';
+
+  const container = document.getElementById('ai-messages');
+  if (msg) {
+    aiMessages.push({ role: 'user', content: msg });
+    container.innerHTML += `<div class="flex gap-3 justify-end chat-msg">
+      <div class="user-bubble rounded-2xl rounded-tr-sm p-4 max-w-2xl text-sm text-slate-300">${escHtml(msg)}</div>
+    </div>`;
+  }
+  container.scrollTop = container.scrollHeight;
+
+  // Loading
+  const loadId = 'ai-loading-' + Date.now();
+  container.innerHTML += `<div id="${loadId}" class="flex gap-3 chat-msg">
+    <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-blue-500 flex items-center justify-center text-sm flex-shrink-0">🤖</div>
+    <div class="ai-bubble rounded-2xl rounded-tl-sm p-4"><div class="loading-spinner w-5 h-5"></div></div>
+  </div>`;
+  container.scrollTop = container.scrollHeight;
+
+  try {
+    const body = codeContext ? { ...codeContext, messages: aiMessages } : { messages: aiMessages };
+    const r = await fetch(`${API}/ai/chat`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    });
+    const { reply } = await r.json();
+    aiMessages.push({ role: 'assistant', content: reply });
+
+    const loader = document.getElementById(loadId);
+    if (loader) {
+      loader.outerHTML = `<div class="flex gap-3 chat-msg">
+        <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-blue-500 flex items-center justify-center text-sm flex-shrink-0">🤖</div>
+        <div class="ai-bubble rounded-2xl rounded-tl-sm p-4 max-w-2xl text-sm text-slate-300 leading-relaxed">${marked.parse(reply)}</div>
+      </div>`;
+    }
+  } catch(e) {
+    const loader = document.getElementById(loadId);
+    if (loader) loader.outerHTML = `<div class="flex gap-3 chat-msg">
+      <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-blue-500 flex items-center justify-center text-sm flex-shrink-0">🤖</div>
+      <div class="ai-bubble rounded-2xl p-4 text-sm text-red-400">Sorry, I couldn't connect. Please try again.</div>
+    </div>`;
+  }
+  container.scrollTop = container.scrollHeight;
+}
+
+function clearAIChat() {
+  aiMessages = [];
+  document.getElementById('ai-messages').innerHTML = `<div class="flex gap-3">
+    <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-blue-500 flex items-center justify-center text-sm flex-shrink-0">🤖</div>
+    <div class="ai-bubble rounded-2xl rounded-tl-sm p-4 max-w-2xl text-sm text-slate-300">Chat cleared! How can I help you?</div>
+  </div>`;
+}
+
+// ─── Notes ───────────────────────────────────────────────────────────
+async function loadNotes() {
+  try {
+    const r = await fetch(`${API}/notes/index`);
+    const { notes: n } = await r.json();
+    notes = n || [];
+    renderNotesList();
+  } catch(e) { notes = []; renderNotesList(); }
+}
+
+function renderNotesList() {
+  const el = document.getElementById('notes-list');
+  el.innerHTML = notes.length ? notes.map(n => `
+    <div class="px-3 py-2.5 rounded-xl cursor-pointer hover:bg-white/5 transition-colors ${currentNote?.id === n.id ? 'bg-violet-500/10 text-violet-300' : 'text-slate-400'}" onclick="selectNote(${n.id})">
+      <div class="text-xs font-medium truncate">${escHtml(n.title)}</div>
+      <div class="text-xs text-slate-600 mt-0.5">${new Date(n.updated_at).toLocaleDateString()}</div>
+    </div>`).join('') :
+    '<p class="text-xs text-slate-600 px-3">No notes yet. Create one!</p>';
+}
+
+function selectNote(id) {
+  currentNote = notes.find(n => n.id === id);
+  if (!currentNote) return;
+  renderNotesList();
+  const area = document.getElementById('note-editor-area');
+  area.innerHTML = `
+    <div class="max-w-3xl mx-auto">
+      <input id="note-title-input" type="text" value="${escHtml(currentNote.title)}" class="w-full bg-transparent text-2xl font-bold outline-none text-slate-100 mb-4 placeholder-slate-600" placeholder="Note title" onchange="updateNote()"/>
+      <textarea id="note-content-input" class="w-full bg-transparent text-sm text-slate-400 outline-none resize-none leading-relaxed placeholder-slate-600 mono" placeholder="Start writing in Markdown..." rows="30" onchange="updateNote()" oninput="autoSaveNote(this)">${escHtml(currentNote.content||'')}</textarea>
+    </div>`;
+}
+
+let noteAutoSave;
+function autoSaveNote() {
+  clearTimeout(noteAutoSave);
+  noteAutoSave = setTimeout(updateNote, 1500);
+}
+
+async function updateNote() {
+  if (!currentNote) return;
+  const title = document.getElementById('note-title-input')?.value;
+  const content = document.getElementById('note-content-input')?.value;
+  try {
+    await fetch(`${API}/notes/${currentNote.id}`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ title, content })
+    });
+    currentNote.title = title; currentNote.content = content;
+    renderNotesList();
+  } catch(e) {}
+}
+
+async function createNote() {
+  try {
+    const r = await fetch(`${API}/notes/index`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ title: 'Untitled Note', content: '' })
+    });
+    const { note } = await r.json();
+    notes.unshift(note);
+    renderNotesList();
+    selectNote(note.id);
+  } catch(e) {}
+}
+
+// ─── Create Room Modal ───────────────────────────────────────────────
+function openCreateRoomModal() {
+  document.getElementById('create-room-modal').classList.remove('hidden');
+}
+function closeCreateRoomModal() {
+  document.getElementById('create-room-modal').classList.add('hidden');
+}
+function togglePublic() {
+  isPublicRoom = !isPublicRoom;
+  const btn = document.getElementById('public-toggle');
+  btn.style.background = isPublicRoom ? 'rgba(124,58,237,0.5)' : 'rgba(100,116,139,0.3)';
+  const span = btn.querySelector('span');
+  span.style.right = isPublicRoom ? '4px' : 'auto';
+  span.style.left = isPublicRoom ? 'auto' : '4px';
+}
+
+async function createRoom() {
+  const name = document.getElementById('room-name').value.trim();
+  const description = document.getElementById('room-desc').value.trim();
+  const tagsRaw = document.getElementById('room-tags').value.trim();
+  const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
+  if (!name) { alert('Please enter a room name.'); return; }
+
+  try {
+    const r = await fetch(`${API}/rooms/create`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ name, description, is_public: isPublicRoom, tags })
+    });
+    const { room } = await r.json();
+    allRooms.unshift(room);
+    closeCreateRoomModal();
+    await joinRoom(room.id, room.name);
+  } catch(e) { alert('Could not create room. Make sure you\'re logged in.'); }
+}
+
+// ─── Search ──────────────────────────────────────────────────────────
+let searchTimeout;
+async function handleSearch(q) {
+  clearTimeout(searchTimeout);
+  const el = document.getElementById('search-results');
+  if (!q.trim()) { el.classList.add('hidden'); return; }
+  searchTimeout = setTimeout(async () => {
+    try {
+      const r = await fetch(`${API}/search?q=${encodeURIComponent(q)}`);
+      const { rooms, users } = await r.json();
+      if (!rooms.length && !users.length) { el.classList.add('hidden'); return; }
+      el.innerHTML = [
+        rooms.map(r => `<div class="px-4 py-2.5 hover:bg-white/5 cursor-pointer text-sm" onclick="joinRoom(${r.id},'${escHtml(r.name)}');document.getElementById('search-results').classList.add('hidden')">
+          <div class="font-medium">${escHtml(r.name)}</div>
+          <div class="text-xs text-slate-500">Room</div>
+        </div>`).join(''),
+        users.map(u => `<div class="px-4 py-2.5 hover:bg-white/5 cursor-pointer text-sm">
+          <div class="font-medium">${escHtml(u.display_name||u.handle)}</div>
+          <div class="text-xs text-slate-500">@${escHtml(u.handle)}</div>
+        </div>`).join('')
+      ].join('');
+      el.classList.remove('hidden');
+    } catch(e) {}
+  }, 300);
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('#search-input') && !e.target.closest('#search-results')) {
+    document.getElementById('search-results')?.classList.add('hidden');
+  }
+});
+
+// ─── Pomodoro Timer ──────────────────────────────────────────────────
+function setTimerMode(mode) {
+  if (timerRunning) { clearInterval(timerInterval); timerRunning = false; document.getElementById('timer-btn').innerHTML = '▶'; }
+  timerMode = mode;
+  timerSeconds = TIMER_MODES[mode];
+  document.querySelectorAll('.timer-mode-btn').forEach(b => {
+    b.style.background = ''; b.style.color = ''; b.style.border = '';
+    b.className = b.className.replace(/bg-[^\s]+ /, '');
+  });
+  const btn = event.currentTarget;
+  btn.style.background = 'rgba(124,58,237,0.2)'; btn.style.color = '#a78bfa'; btn.style.border = '1px solid rgba(124,58,237,0.3)';
+  document.getElementById('timer-label').textContent = mode === 'focus' ? 'Focus' : mode === 'short' ? 'Short Break' : 'Long Break';
+  updateTimerDisplay();
+  updateRing();
+}
+
+function toggleTimer() {
+  if (timerRunning) {
+    clearInterval(timerInterval);
+    timerRunning = false;
+    document.getElementById('timer-btn').innerHTML = '▶';
+  } else {
+    timerRunning = true;
+    document.getElementById('timer-btn').innerHTML = '⏸';
+    timerInterval = setInterval(() => {
+      timerSeconds--;
+      updateTimerDisplay();
+      updateRing();
+      if (timerSeconds <= 0) {
+        clearInterval(timerInterval);
+        timerRunning = false;
+        document.getElementById('timer-btn').innerHTML = '▶';
+        onTimerComplete();
+      }
+    }, 1000);
+  }
+}
+
+function resetTimer() {
+  clearInterval(timerInterval);
+  timerRunning = false;
+  timerSeconds = TIMER_MODES[timerMode];
+  document.getElementById('timer-btn').innerHTML = '▶';
+  updateTimerDisplay();
+  updateRing();
+}
+
+function skipTimer() { timerSeconds = 0; updateTimerDisplay(); updateRing(); onTimerComplete(); }
+
+function onTimerComplete() {
+  if (timerMode === 'focus') {
+    sessionsCompleted++;
+    totalFocusMinutes += 25;
+    document.getElementById('sessions-count').textContent = sessionsCompleted;
+    document.getElementById('focus-time').textContent = totalFocusMinutes + 'm';
+  } else {
+    totalBreakMinutes += (timerMode === 'short' ? 5 : 15);
+    document.getElementById('break-time').textContent = totalBreakMinutes + 'm';
+  }
+  // Auto-switch
+  if (timerMode === 'focus') setTimerModeAuto('short');
+  else setTimerModeAuto('focus');
+}
+
+function setTimerModeAuto(mode) {
+  timerMode = mode;
+  timerSeconds = TIMER_MODES[mode];
+  document.getElementById('timer-label').textContent = mode === 'focus' ? 'Focus' : mode === 'short' ? 'Short Break' : 'Long Break';
+  updateTimerDisplay(); updateRing();
+}
+
+function updateTimerDisplay() {
+  const m = Math.floor(timerSeconds / 60).toString().padStart(2,'0');
+  const s = (timerSeconds % 60).toString().padStart(2,'0');
+  document.getElementById('timer-display').textContent = `${m}:${s}`;
+}
+
+function updateRing() {
+  const total = TIMER_MODES[timerMode];
+  const progress = timerSeconds / total;
+  const circumference = 565.5;
+  document.getElementById('timer-ring').style.strokeDashoffset = circumference * (1 - progress);
+}
+</script>
+</body>
+</html>
