@@ -1,6 +1,7 @@
 {
   "name": "codecollab",
   "version": "1.0.0",
+  "type": "module",
   "description": "Collaborative coding and study platform",
   "scripts": {
     "dev": "vercel dev",
