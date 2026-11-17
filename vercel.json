@@ -9,6 +9,14 @@
       "destination": "/app/index.html"
     },
     {
+      "source": "/api/rooms/list",
+      "destination": "/api/rooms/index"
+    },
+    {
+      "source": "/api/rooms/create",
+      "destination": "/api/rooms/index"
+    },
+    {
       "source": "/api/rooms/:id/join",
       "destination": "/api/rooms/join"
     },
@@ -17,12 +25,36 @@
       "destination": "/api/rooms/messages?id=:id"
     },
     {
-      "source": "/api/rooms/:id/send",
-      "destination": "/api/rooms/send"
+      "source": "/api/rooms/send",
+      "destination": "/api/rooms/messages"
     },
     {
-      "source": "/api/notes/index",
-      "destination": "/api/notes/list"
+      "source": "/api/rooms/:id/send",
+      "destination": "/api/rooms/messages?id=:id"
+    },
+    {
+      "source": "/api/snippets/save",
+      "destination": "/api/snippets/index"
+    },
+    {
+      "source": "/api/snippets/:id",
+      "destination": "/api/snippets/index?id=:id"
+    },
+    {
+      "source": "/api/notes/list",
+      "destination": "/api/notes/index"
+    },
+    {
+      "source": "/api/notes/:id",
+      "destination": "/api/notes/index?id=:id"
+    },
+    {
+      "source": "/api/profile/me",
+      "destination": "/api/profile/index"
+    },
+    {
+      "source": "/api/profile/update",
+      "destination": "/api/profile/index"
     }
   ],
   "headers": [
